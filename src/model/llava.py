@@ -170,6 +170,8 @@ class TunedLlamaAttention(nn.Module):
 
 CUSTOM_LLAMA_ATTENTION_CLASSES = {
     "eager": TunedLlamaAttention,
+    "sdpa": TunedLlamaAttention,   
+    "flash_attention_2": TunedLlamaAttention
 }
 
 
@@ -312,7 +314,8 @@ class TunedLlamaModel(LlamaModel, GenerationMixin):
 
             # dim prospector
             if DimProspector._flag() and ValueMonitor.get_output_token_count() < 0 :
-                if isinstance(DimProspector.sink_select_layers, list) and i in DimProspector.sink_select_layers:
+                ### if isinstance(DimProspector.sink_select_layers, list) and i in DimProspector.sink_select_layers:
+                if hasattr(DimProspector, 'sink_select_layers') and isinstance(DimProspector.sink_select_layers, list) and i in DimProspector.sink_select_layers:
                     DimProspector.run_logic(hidden_states, layer=i)
 
             if self.gradient_checkpointing and self.training:

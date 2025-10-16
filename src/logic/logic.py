@@ -13,10 +13,18 @@ class DefaultVars:
     # DimProspector
     indices = defaultdict(list)
     dim_sink = DIM_SINK[llm_name]
+    sink_select_layers = None
     
     # HeadFork
     forked_head = {}
     forked_head_per_token = defaultdict(dict)
+    
+    # Parameters from activate() method
+    tau = None
+    rho = None
+    summ = None
+    p = None
+    except_last_layer = None
     
 
 class LogicEngine:
@@ -27,6 +35,12 @@ class LogicEngine:
     forked_head = defaultVars.forked_head
     forked_head_per_token = defaultVars.forked_head_per_token
     dim_sink = defaultVars.dim_sink
+    sink_select_layers = defaultVars.sink_select_layers
+    tau = defaultVars.tau
+    rho = defaultVars.rho
+    summ = defaultVars.summ
+    p = defaultVars.p
+    except_last_layer = defaultVars.except_last_layer
     
     @classmethod
     def activate(
@@ -88,6 +102,12 @@ class LogicEngine:
         cls.indices = _defaultVars.indices
         cls.forked_head = _defaultVars.forked_head
         cls.forked_head_per_token = _defaultVars.forked_head_per_token
+        cls.sink_select_layers = _defaultVars.sink_select_layers
+        cls.tau = _defaultVars.tau
+        cls.rho = _defaultVars.rho
+        cls.summ = _defaultVars.summ
+        cls.p = _defaultVars.p
+        cls.except_last_layer = _defaultVars.except_last_layer
         
 class DimProspector(LogicEngine):
     
@@ -113,6 +133,10 @@ class HeadFork(LogicEngine):
 
     @classmethod
     def run_logic(cls, attn, layer_idx):
+        # Early return if sink_select_layers is not initialized
+        if cls.sink_select_layers is None:
+            return
+        
         layer = layer_idx
         if isinstance(cls.sink_select_layers, list):
             sink_inds = cls.indices[layer] # [1,...]
@@ -164,6 +188,14 @@ class VARProcessor(LogicEngine):
         """
         attention map: # torch.Size([1, 32, 632(1), 576])
         """
+        # Early return if VARProcessor is not initialized
+        if cls.p is None:
+            return attention_map
+        
+        # Early return if HeadFork data is not available for this layer
+        if layer_idx not in HeadFork.forked_head:
+            return attention_map
+        
         p = cls.p
         
         if cls.except_last_layer and cls.current_decoder_layer == cls.model_config.num_hidden_layers - 1:

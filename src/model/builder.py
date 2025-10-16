@@ -41,6 +41,8 @@ def load_pretrained_model(
 
     if use_flash_attn:
         kwargs["attn_implementation"] = "flash_attention_2"
+    else:
+       kwargs["attn_implementation"] = "eager"
 
     if is_mm_model(model_path):
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)

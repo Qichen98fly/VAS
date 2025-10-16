@@ -243,7 +243,7 @@ def eval_model(args):
     ).to(model.device, dtype=torch.float16)
 
     input_ids = (
-        tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt")
+        tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, conv=conv, return_tensors="pt")
         .unsqueeze(0)
         .cuda()
     )
